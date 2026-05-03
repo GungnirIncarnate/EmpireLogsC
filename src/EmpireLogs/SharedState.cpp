@@ -49,7 +49,7 @@ namespace EmpireLogs
 
     void SharedState::SetupPaths(const std::filesystem::path& working_dir)
     {
-        m_log_path = working_dir / "Mods" / "PalBoxTracker" / "EmpireLog.json";
+        m_log_path = working_dir / "Mods" / "EmpireLogs" / "EmpireLog.json";
         m_guild_export_path = working_dir / "PalDefender" / "guildexport.json";
     }
 
