@@ -8,6 +8,7 @@ out/
 *.VC.opendb
 *.sln
 *.vcxproj*
+EmpireLogs.code-workspace
 
 # CMake/Ninja generated files
 CMakeCache.txt
