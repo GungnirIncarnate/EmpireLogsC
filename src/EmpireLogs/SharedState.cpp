@@ -50,7 +50,7 @@ namespace EmpireLogs
     void SharedState::SetupPaths(const std::filesystem::path& working_dir)
     {
         m_log_path = working_dir / "Mods" / "EmpireLogsC" / "EmpireLog.json";
-        m_guild_export_path = working_dir / "PalDefender" / "guildexport.json";
+        m_guild_export_path = working_dir / "Mods"  / "PalDefender" / "guildexport.json";
     }
 
     auto SharedState::TryReadObjectProp(RC::Unreal::UObject* object, const wchar_t* prop_name) -> RC::Unreal::UObject*
