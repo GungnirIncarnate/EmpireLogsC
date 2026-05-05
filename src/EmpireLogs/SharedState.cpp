@@ -14,6 +14,8 @@
 #include <fstream>
 #include <regex>
 #include <sstream>
+#include <string_view>
+#include <vector>
 
 namespace EmpireLogs
 {
@@ -26,6 +28,39 @@ namespace EmpireLogs
             uint32_t C{};
             uint32_t D{};
         };
+
+        struct RawArray
+        {
+            void*   data{};
+            int32_t num{};
+            int32_t max{};
+        };
+
+        // Mirrors FPalFastGuildPlayerInfoRepInfoArray:
+        // FFastArraySerializer base is 0x108 bytes, then TArray<FPalGuildPlayerInfoRepInfo> Items.
+        struct GuildPlayerRepInfoArray
+        {
+            uint8_t padding[0x108];
+            void*   items_data{};
+            int32_t items_num{};
+            int32_t items_max{};
+        };
+
+        // Mirrors FPalGuildPlayerInfoRepInfo (size 0x40):
+        //   FFastArraySerializerItem  0x000 (0xC bytes)
+        //   FGuid PlayerUId           0x00C (0x10 bytes)
+        //   FPalGuildPlayerInfo       0x020
+        //     EPalGuildPlayerStatus   +0x00
+        //     FDateTime               +0x08
+        //     FString PlayerName      +0x10  →  absolute 0x030
+        struct GuildPlayerRepInfoItem
+        {
+            uint8_t  padding[0x30];
+            wchar_t* string_data{};
+            int32_t  string_num{};
+            int32_t  string_max{};
+        };
+        static_assert(sizeof(GuildPlayerRepInfoItem) == 0x40, "GuildPlayerRepInfoItem size mismatch");
 
         auto join_strings(const std::vector<std::string>& values, const std::string_view separator) -> std::string
         {
@@ -217,6 +252,72 @@ namespace EmpireLogs
                 members.emplace_back(player_name);
             }
         }
+    }
+
+    auto SharedState::QueryLiveMembers(RC::Unreal::UObject* guild) -> std::vector<std::string>
+    {
+        if (!guild)
+        {
+            return {};
+        }
+
+        const auto* rep = guild->GetValuePtrByPropertyNameInChain<GuildPlayerRepInfoArray>(STR("PlayerInfoRepInfoArray"));
+        if (!rep || rep->items_num <= 0 || !rep->items_data)
+        {
+            return {};
+        }
+
+        std::vector<std::string> members;
+        members.reserve(static_cast<size_t>(rep->items_num));
+
+        const auto* items = static_cast<const GuildPlayerRepInfoItem*>(rep->items_data);
+        for (int32_t i = 0; i < rep->items_num; ++i)
+        {
+            const auto& item = items[i];
+            if (item.string_data && item.string_num > 0)
+            {
+                members.emplace_back(RC::to_string(
+                    std::wstring_view{item.string_data, static_cast<size_t>(item.string_num - 1)}));
+            }
+        }
+
+        return members;
+    }
+
+    void SharedState::SyncGuildMembers(const std::string& guild_id, const std::vector<std::string>& members)
+    {
+        if (guild_id.empty())
+        {
+            return;
+        }
+
+        m_guilds[guild_id].member_names = members;
+    }
+
+    int SharedState::QueryLiveCampCount(RC::Unreal::UObject* guild)
+    {
+        if (!guild)
+        {
+            return 0;
+        }
+
+        const auto* arr = guild->GetValuePtrByPropertyNameInChain<RawArray>(STR("MapObjectInstanceIds_BaseCampPoint"));
+        if (!arr || arr->num < 0)
+        {
+            return 0;
+        }
+
+        return arr->num;
+    }
+
+    void SharedState::SetCampCount(const std::string& guild_id, int count)
+    {
+        if (guild_id.empty())
+        {
+            return;
+        }
+
+        m_guilds[guild_id].camp_count = std::max(0, count);
     }
 
     int SharedState::IncrementCamp(const std::string& guild_id)

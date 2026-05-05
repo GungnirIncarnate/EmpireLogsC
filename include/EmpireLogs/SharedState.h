@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace RC::Unreal
 {
@@ -27,6 +28,10 @@ namespace EmpireLogs
 
         void EnsureGuild(const std::string& guild_id, const std::string& guild_name);
         void RegisterPlayer(const std::string& player_name, const std::string& guild_id, const std::string& guild_name);
+        int QueryLiveCampCount(RC::Unreal::UObject* guild);
+        auto QueryLiveMembers(RC::Unreal::UObject* guild) -> std::vector<std::string>;
+        void SetCampCount(const std::string& guild_id, int count);
+        void SyncGuildMembers(const std::string& guild_id, const std::vector<std::string>& members);
         int IncrementCamp(const std::string& guild_id);
         int DecrementCamp(const std::string& guild_id);
 
