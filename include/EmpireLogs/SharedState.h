@@ -31,6 +31,7 @@ namespace EmpireLogs
         int QueryLiveCampCount(RC::Unreal::UObject* guild);
         auto QueryLiveMembers(RC::Unreal::UObject* guild) -> std::vector<std::string>;
         void SetCampCount(const std::string& guild_id, int count);
+        int GetCampCount(const std::string& guild_id) const;
         void SyncGuildMembers(const std::string& guild_id, const std::vector<std::string>& members);
         int IncrementCamp(const std::string& guild_id);
         int DecrementCamp(const std::string& guild_id);

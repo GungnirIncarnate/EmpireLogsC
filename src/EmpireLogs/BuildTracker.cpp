@@ -5,20 +5,19 @@
 
 #include <Helpers/String.hpp>
 
-#include <Unreal/NameTypes.hpp>
 #include <Unreal/UFunctionStructs.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 
 #include <mutex>
-#include <string>
+#include <vector>
 
 namespace EmpireLogs
 {
     namespace
     {
-        struct RequestBuildParams
+        struct CompleteBuildParams
         {
-            RC::Unreal::FName BuildObjectName{};
+            RC::Unreal::UObject* MapObjectModel{};
         };
     }
 
@@ -30,12 +29,12 @@ namespace EmpireLogs
     void BuildTracker::InstallHook()
     {
         m_hook_ids = RC::Unreal::UObjectGlobals::RegisterHook(
-            STR("/Script/Pal.PalNetworkPlayerComponent:RequestBuild_ToServer"),
+            STR("/Script/Pal.PalPlayerRecordData:OnCompleteBuild_ServerInternal"),
             &BuildTracker::OnHook,
             nullptr,
             this);
 
-        PCL_Log("Hook [RequestBuild_ToServer] IDs: ({}, {})", m_hook_ids.first, m_hook_ids.second);
+        PCL_Log("Hook [OnCompleteBuild_ServerInternal] IDs: ({}, {})", m_hook_ids.first, m_hook_ids.second);
     }
 
     void BuildTracker::OnHook(RC::Unreal::UnrealScriptFunctionCallableContext& context, void* custom_data)
@@ -48,38 +47,55 @@ namespace EmpireLogs
 
     void BuildTracker::Handle(RC::Unreal::UnrealScriptFunctionCallableContext& context)
     {
-        const auto& params = context.GetParams<RequestBuildParams>();
-        const auto build_name = RC::to_string(params.BuildObjectName.ToString());
-        if (build_name.find("PalBoxV2") == std::string::npos)
+        const auto& params = context.GetParams<CompleteBuildParams>();
+        (void)params;
+
+        std::vector<RC::Unreal::UObject*> guild_objects;
+        RC::Unreal::UObjectGlobals::FindAllOf(STR("PalGroupGuildBase"), guild_objects);
+        if (guild_objects.empty())
         {
             return;
         }
 
-        auto* player_state = m_shared_state.ResolvePlayerStateFromContext(context.Context);
-        if (!player_state)
-        {
-            return;
-        }
-
-        const auto [player_name, guild] = m_shared_state.ResolvePlayerNameAndGuild(player_state);
-        const auto guild_id = m_shared_state.ResolveGuildId(guild);
-        const auto guild_name = m_shared_state.ResolveGuildName(guild);
-
+        int changed_guilds = 0;
         {
             std::lock_guard<std::mutex> lock{m_shared_state.GetMutex()};
-            m_shared_state.RegisterPlayer(player_name, guild_id, guild_name);
 
-            if (!guild_id.empty())
+            for (auto* guild : guild_objects)
             {
-                const auto new_count = m_shared_state.IncrementCamp(guild_id);
-                PCL_Log("BUILD | {} | guild={} | camps={}", RC::ensure_str(player_name), RC::ensure_str(guild_name), new_count);
-            }
-            else
-            {
-                PCL_WarnLog("BUILD | {} | guild unknown", RC::ensure_str(player_name));
+                if (!guild)
+                {
+                    continue;
+                }
+
+                const auto guild_id = m_shared_state.ResolveGuildId(guild);
+                if (guild_id.empty())
+                {
+                    continue;
+                }
+
+                const auto guild_name = m_shared_state.ResolveGuildName(guild);
+                const auto live_count = m_shared_state.QueryLiveCampCount(guild);
+                m_shared_state.EnsureGuild(guild_id, guild_name);
+                const auto old_count = m_shared_state.GetCampCount(guild_id);
+                if (old_count == live_count)
+                {
+                    continue;
+                }
+
+                m_shared_state.SetCampCount(guild_id, live_count);
+                ++changed_guilds;
             }
 
-            m_shared_state.WriteLog();
+            if (changed_guilds > 0)
+            {
+                m_shared_state.WriteLog();
+            }
+        }
+
+        if (changed_guilds <= 0)
+        {
+            return;
         }
     }
 }

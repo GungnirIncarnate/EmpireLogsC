@@ -55,21 +55,17 @@ namespace EmpireLogs
         const auto guild_id = m_shared_state.ResolveGuildId(guild);
         const auto guild_name = m_shared_state.ResolveGuildName(guild);
 
-        const auto live_count = m_shared_state.QueryLiveCampCount(guild);
         const auto live_members = m_shared_state.QueryLiveMembers(guild);
-        int camp_count = 0;
         {
             std::lock_guard<std::mutex> lock{m_shared_state.GetMutex()};
             m_shared_state.RegisterPlayer(player_name, guild_id, guild_name);
             if (!guild_id.empty())
             {
-                m_shared_state.SetCampCount(guild_id, live_count);
                 m_shared_state.SyncGuildMembers(guild_id, live_members);
-                camp_count = live_count;
             }
             m_shared_state.WriteLog();
         }
 
-        PCL_Log("JOIN | {} | guild={} | id={} | camps={} | members={}", RC::ensure_str(player_name), RC::ensure_str(guild_name), RC::ensure_str(guild_id.empty() ? std::string{"?"} : guild_id), camp_count, live_members.size());
+        PCL_Log("JOIN | {} | guild={} | id={} | members={}", RC::ensure_str(player_name), RC::ensure_str(guild_name), RC::ensure_str(guild_id.empty() ? std::string{"?"} : guild_id), live_members.size());
     }
 }

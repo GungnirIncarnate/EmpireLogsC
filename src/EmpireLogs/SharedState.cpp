@@ -320,6 +320,17 @@ namespace EmpireLogs
         m_guilds[guild_id].camp_count = std::max(0, count);
     }
 
+    int SharedState::GetCampCount(const std::string& guild_id) const
+    {
+        const auto guild_it = m_guilds.find(guild_id);
+        if (guild_it == m_guilds.end())
+        {
+            return 0;
+        }
+
+        return std::max(0, guild_it->second.camp_count);
+    }
+
     int SharedState::IncrementCamp(const std::string& guild_id)
     {
         if (guild_id.empty())
