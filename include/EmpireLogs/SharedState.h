@@ -4,6 +4,7 @@
 
 #include <String/StringType.hpp>
 
+#include <atomic>
 #include <filesystem>
 #include <mutex>
 #include <string>
@@ -48,6 +49,8 @@ namespace EmpireLogs
 
         auto GetLogPath() const -> const std::filesystem::path& { return m_log_path; }
         auto GetMutex() -> std::mutex& { return m_state_mutex; }
+        void SetServerReady() { m_server_ready.store(true, std::memory_order_release); }
+        bool IsServerReady() const { return m_server_ready.load(std::memory_order_acquire); }
 
     private:
         std::filesystem::path m_log_path{};
@@ -55,5 +58,6 @@ namespace EmpireLogs
         std::unordered_map<std::string, GuildInfo> m_guilds{};
         std::unordered_map<std::string, PlayerInfo> m_players{};
         std::mutex m_state_mutex{};
+        std::atomic<bool> m_server_ready{false};
     };
 }

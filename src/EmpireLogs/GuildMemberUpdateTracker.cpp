@@ -64,6 +64,13 @@ namespace EmpireLogs
 
     void GuildMemberUpdateTracker::Handle(RC::Unreal::UnrealScriptFunctionCallableContext& context)
     {
+        // Skip until a player joins to stop servers from hanging.
+        if (!m_shared_state.IsServerReady())
+        {
+            PCL_Log("GuildMemberUpdateTracker: Server not ready, skipping update.");
+            return;
+        }
+
         auto* player_state = context.Context;
         if (!player_state)
         {

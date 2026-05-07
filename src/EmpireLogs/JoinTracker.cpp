@@ -65,6 +65,9 @@ namespace EmpireLogs
             }
             m_shared_state.WriteLog();
         }
+        
+        PCL_Log("Marked server as ready due to player join: {}", RC::ensure_str(player_name));
+        m_shared_state.SetServerReady();
 
         PCL_Log("JOIN | {} | guild={} | id={} | members={}", RC::ensure_str(player_name), RC::ensure_str(guild_name), RC::ensure_str(guild_id.empty() ? std::string{"?"} : guild_id), live_members.size());
     }

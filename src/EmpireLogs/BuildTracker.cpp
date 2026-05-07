@@ -47,6 +47,14 @@ namespace EmpireLogs
 
     void BuildTracker::Handle(RC::Unreal::UnrealScriptFunctionCallableContext& context)
     {
+        // Skip processing during server startup to avoid reading uninitialized guild memory.
+        // OnCompleteBuild_ServerInternal can fire during save restoration before guild
+        // structures are fully initialized. Only process after a real player has joined.
+        if (!m_shared_state.IsServerReady())
+        {
+            return;
+        }
+
         const auto& params = context.GetParams<CompleteBuildParams>();
         (void)params;
 
