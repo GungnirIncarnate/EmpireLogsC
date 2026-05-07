@@ -33,6 +33,8 @@ namespace EmpireLogs
         void SetCampCount(const std::string& guild_id, int count);
         int GetCampCount(const std::string& guild_id) const;
         void SyncGuildMembers(const std::string& guild_id, const std::vector<std::string>& members);
+        bool SyncGuildMembersIfChanged(const std::string& guild_id, const std::vector<std::string>& members);
+        int RemoveEmptyGuilds();
         int IncrementCamp(const std::string& guild_id);
         int DecrementCamp(const std::string& guild_id);
 

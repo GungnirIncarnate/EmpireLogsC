@@ -294,6 +294,41 @@ namespace EmpireLogs
         m_guilds[guild_id].member_names = members;
     }
 
+    bool SharedState::SyncGuildMembersIfChanged(const std::string& guild_id, const std::vector<std::string>& members)
+    {
+        if (guild_id.empty())
+        {
+            return false;
+        }
+
+        auto& current_members = m_guilds[guild_id].member_names;
+        if (current_members == members)
+        {
+            return false;
+        }
+
+        current_members = members;
+        return true;
+    }
+
+    int SharedState::RemoveEmptyGuilds()
+    {
+        int removed = 0;
+        for (auto it = m_guilds.begin(); it != m_guilds.end();)
+        {
+            if (it->second.member_names.empty())
+            {
+                it = m_guilds.erase(it);
+                ++removed;
+            }
+            else
+            {
+                ++it;
+            }
+        }
+        return removed;
+    }
+
     int SharedState::QueryLiveCampCount(RC::Unreal::UObject* guild)
     {
         if (!guild)

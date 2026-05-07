@@ -10,6 +10,7 @@ namespace EmpireLogs
     MainLoader::MainLoader()
         : m_dismantle_tracker(m_shared_state)
         , m_build_tracker(m_shared_state)
+        , m_guild_member_update_tracker(m_shared_state)
         , m_join_tracker(m_shared_state)
     {
     }
@@ -27,6 +28,7 @@ namespace EmpireLogs
 
         m_dismantle_tracker.InstallHook();
         m_build_tracker.InstallHook();
+        m_guild_member_update_tracker.InstallHook();
         m_join_tracker.InstallHook();
 
         PCL_Log("Hooks registered - EmpireLogs running.");
