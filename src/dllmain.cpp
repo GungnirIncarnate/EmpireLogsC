@@ -9,7 +9,7 @@ public:
         : CppUserModBase()
     {
         ModName = STR("EmpireLogs");
-        ModVersion = STR("0.1.0");
+        ModVersion = STR("0.5.0");
         ModDescription = STR("Track PalBox dismantle/build events using UE4SS C++ hooks.");
         ModAuthors = STR("GungnirIncarnate");
     }
